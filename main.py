@@ -24,7 +24,7 @@ def find_position(maze, symbol):
                 position = (x_loc,y_loc)
                 return position
 #Test:
-print(find_position(maze, "G"))
+#print(find_position(maze, "G"))
 
 def get_neighbors(position, maze):
     '''
@@ -45,9 +45,49 @@ def get_neighbors(position, maze):
 
     return neighbors
 #Test:
-p1 = (4,4)
-print(get_neighbors(p1,maze))
+#p1 = (4,4)
+#print(get_neighbors(p1,maze))
 
 def bfs(maze, start, goal):
+    print("START")
     queue = deque()
+    # storing current position and path to reach it together
     queue.append((start, [start]))
+    print("queue now is:", queue)
+    visited = set()
+
+    # as long as there are positions to explore
+    while queue:
+        #FIFO, BFS
+        current, path = queue.popleft()
+        print("current is:", current)
+        print("path now is:", path)
+
+        # goal test
+        if current == goal:
+            return path
+        
+        # skipping the previosuly visited
+        if current in visited:
+            print(f"state {current} was already visited so skipped")
+            continue
+        
+        # marking the already visited
+        visited.add(current)
+        print(f"{current} was added to already visited set")
+        print("visited set=", visited)
+
+        # expanding neighbors
+        for neighbor in get_neighbors(current, maze):
+            queue.append((neighbor, path + [neighbor]))
+            print("neighbor of current is:", neighbor)
+            print("new queue is:", queue)
+        
+        
+
+
+#Test:
+start = find_position(maze, "S")
+goal = find_position(maze, "G")
+path = bfs(maze, start, goal)
+print(path)
