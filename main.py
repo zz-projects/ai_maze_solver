@@ -56,7 +56,7 @@ def bfs(maze, start, goal):
     print("queue now is:", queue)
     visited = set()
 
-    # as long as there are positions to explore
+    # continue as long as there are positions to explore
     while queue:
         #FIFO, BFS
         current, path = queue.popleft()
@@ -65,26 +65,22 @@ def bfs(maze, start, goal):
 
         # goal test
         if current == goal:
+            print("Goal achieved!")
             return path
-        
-        # skipping the previosuly visited
-        if current in visited:
-            print(f"state {current} was already visited so skipped")
-            continue
         
         # marking the already visited
         visited.add(current)
         print(f"{current} was added to already visited set")
         print("visited set=", visited)
 
-        # expanding neighbors
+        # expanding neighbors (excluding repeated neighbors)
         for neighbor in get_neighbors(current, maze):
-            queue.append((neighbor, path + [neighbor]))
-            print("neighbor of current is:", neighbor)
-            print("new queue is:", queue)
+            if neighbor not in visited:
+                queue.append((neighbor, path + [neighbor]))
+                print("neighbor of current is:", neighbor)
+                print("new queue is:", queue)
         
         
-
 
 #Test:
 start = find_position(maze, "S")
