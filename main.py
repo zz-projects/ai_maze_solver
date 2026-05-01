@@ -53,37 +53,66 @@ def bfs(maze, start, goal):
     queue = deque()
     # storing current position and path to reach it together
     queue.append((start, [start]))
-    print("queue now is:", queue)
+    #print("queue now is:", queue)
     visited = set()
 
     # continue as long as there are positions to explore
     while queue:
         #FIFO, BFS
         current, path = queue.popleft()
-        print("current is:", current)
-        print("path now is:", path)
+        #print("current is:", current)
+        #print("path now is:", path)
 
         # goal test
         if current == goal:
             print("Goal achieved!")
             return path
         
+        # skipping the previosuly visited
+        if current in visited:
+            #print(f"state {current} was already visited so skipped")
+            continue
+        
         # marking the already visited
         visited.add(current)
-        print(f"{current} was added to already visited set")
-        print("visited set=", visited)
+        #print(f"{current} was added to already visited set")
+        #print("visited set=", visited)
 
         # expanding neighbors (excluding repeated neighbors)
         for neighbor in get_neighbors(current, maze):
             if neighbor not in visited:
                 queue.append((neighbor, path + [neighbor]))
-                print("neighbor of current is:", neighbor)
-                print("new queue is:", queue)
+                #print("neighbor of current is:", neighbor)
+                #print("new queue is:", queue)
         
-        
+
+# display solution step-by-step
+def copy_maze(maze):
+    return [row[:] for row in maze]
+
+def mark_path(maze, path):
+    step = 0
+    new_maze = copy_maze(maze)
+    print("\nStep 0 --- Initial Maze:")
+    print_maze(new_maze)
+    for (x,y) in path:
+        if (x,y) != path[0] and (x,y) != path[-1]:
+            new_maze[x][y] = "*"
+            step+=1
+            print(f"\nStep {step}:")
+            print_maze(new_maze)
+    return new_maze
+
+def print_maze(maze):
+    for row in maze:
+        print("  ".join(row))
 
 #Test:
 start = find_position(maze, "S")
 goal = find_position(maze, "G")
 path = bfs(maze, start, goal)
-print(path)
+print("path is: ", path)
+# Test display:
+marked = mark_path(maze,path)
+print("\nSolved Maze:")
+print_maze(marked)
