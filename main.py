@@ -6,6 +6,13 @@ maze = [["S", ".", ".","#","."],
         [".","#","#","#","."],
         [".",".",".","G","."]
 ]
+
+maze2 = [["S", ".", ".",".","#","."],
+        ["#","#",".",".","#","."],
+        [".",".",".",".",".","."],
+        [".","#","#","#","#","."],
+        [".",".",".","G",".","."]
+]
 #"S" = Start
 #"G" = Goal
 #"." = free space
@@ -49,6 +56,8 @@ def get_neighbors(position, maze):
 #print(get_neighbors(p1,maze))
 
 def bfs(maze, start, goal):
+    nodes_exploered = 0
+    max_queue_size = 0
     print("START")
     queue = deque()
     # storing current position and path to reach it together
@@ -58,14 +67,17 @@ def bfs(maze, start, goal):
 
     # continue as long as there are positions to explore
     while queue:
-        #FIFO, BFS
+        max_queue_size = max(max_queue_size, len(queue))
         current, path = queue.popleft()
+        nodes_exploered += 1
         #print("current is:", current)
         #print("path now is:", path)
 
-        # goal test
+        # goal test [not ideal as in BFS we test for goal at the time of child node creation]
         if current == goal:
             print("Goal achieved!")
+            print("number of explored nodes:", nodes_exploered)
+            print("max queue size = ", max_queue_size)
             return path
         
         # skipping the previosuly visited
@@ -80,11 +92,59 @@ def bfs(maze, start, goal):
 
         # expanding neighbors (excluding repeated neighbors)
         for neighbor in get_neighbors(current, maze):
+            # goal test at the time of creating child nodes
             if neighbor not in visited:
                 queue.append((neighbor, path + [neighbor]))
                 #print("neighbor of current is:", neighbor)
                 #print("new queue is:", queue)
         
+
+
+def bfs_optimized(maze, start, goal):
+    '''
+    In this optimized version of BFS, 2 other options are added:
+    1) goal test is done at the time of creation of child nodes
+    2) With the aim of deleting nodes with repeated states, even more, child nodes are checked
+    not only with explores set but also with frontier.
+    '''
+    nodes_exploered = 0
+    max_queue_size = 0
+    print("START")
+    queue = deque()
+    # storing current position and path to reach it together
+    queue.append((start, [start]))
+    #print("queue now is:", queue)
+    visited = set()
+    visited.add(start)
+
+    # continue as long as there are positions to explore
+    while queue:
+        max_queue_size = max(max_queue_size, len(queue))
+        current, path = queue.popleft()
+        nodes_exploered += 1
+        #print("current is:", current)
+        #print("path now is:", path)
+        #print("queue is :", queue)
+
+
+        # expanding neighbors (+ excluding repeated neighbors)
+        for neighbor in get_neighbors(current, maze):
+            # goal test at the time of creating child nodes (BFS standard)
+            if neighbor == goal:
+                print("Goal achieved!")
+                path = path + [neighbor]
+                print("number of explored nodes:", nodes_exploered)
+                print("max queue size = ", max_queue_size)
+                return path
+            # in BFS, for prevention of repeated nodes, the new child nodes should be checked with explored and 
+            # in this code, we add neighbors to visited (which includes both explored and frontier), so we are...
+            # checking both in one place (they are all in one set)
+            if neighbor not in visited:
+                #print("neighbor not in visited")
+                    queue.append((neighbor, path + [neighbor]))
+                    visited.add(neighbor)
+                    #print("neighbor of current is:", neighbor)
+
 
 # display solution step-by-step
 def copy_maze(maze):
@@ -107,12 +167,37 @@ def print_maze(maze):
     for row in maze:
         print("  ".join(row))
 
-#Test:
+#Test1:
 start = find_position(maze, "S")
 goal = find_position(maze, "G")
-path = bfs(maze, start, goal)
-print("path is: ", path)
+path1 = bfs(maze, start, goal)
+print("old path is: ", path1)
 # Test display:
-marked = mark_path(maze,path)
+marked = mark_path(maze,path1)
+print("\nSolved Maze:")
+print_maze(marked)
+#######
+path2 = bfs_optimized(maze, start, goal)
+print("new path is: ", path2)
+# Test display:
+marked = mark_path(maze,path2)
+print("\nSolved Maze:")
+print_maze(marked)
+
+
+#Test2:
+start = find_position(maze2, "S")
+goal = find_position(maze2, "G")
+path1 = bfs(maze2, start, goal)
+print("old path is: ", path1)
+# Test display:
+marked = mark_path(maze2, path1)
+print("\nSolved Maze:")
+print_maze(marked)
+#######
+path2 = bfs_optimized(maze2, start, goal)
+print("new path is: ", path2)
+# Test display:
+marked = mark_path(maze2,path2)
 print("\nSolved Maze:")
 print_maze(marked)
