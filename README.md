@@ -11,8 +11,8 @@ Outputs the solution clearly
 Goal formulation: getting to the goal point position (goal state)
 
 Problem formulation:
-- What is state: the current position in maze (x,y)
-- What is initial state: The start point's position (x,y)
+- What is state: the current position in maze (row, col)
+- What is initial state: The start point's position (row, col)
 - What are actions: up, down, right, left
 --- What is action function?
 - What is result function?
@@ -22,3 +22,4 @@ Problem formulation:
 
 Search: Which algorithm to use?
 BFS
+DFS
