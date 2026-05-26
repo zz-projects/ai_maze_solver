@@ -1,4 +1,5 @@
 from collections import deque
+import heapq
 
 maze = [
 ["S",".",".","#","."],
@@ -27,6 +28,21 @@ maze3 = [
 #"G" = Goal
 #"." = free space
 #"#" = wall 
+
+# Maze with different move cost
+maze4 = [
+["S","M","~","#","."],
+["#","#",".","#","."],
+[".",".",".","M","M"],
+[".","#","#","#","M"],
+[".",".",".","G","~"]
+]
+# different move costs:
+# "." = 1
+# "~" = 3
+# "M" = 7
+
+
 #print(f"This is maze:\n{maze}")
 
 def find_position(maze, symbol):
@@ -67,6 +83,7 @@ def get_neighbors(position, maze):
 #p1 = (4,4)
 #print(get_neighbors(p1,maze))
 
+            
 def reconstruct_path(parents, start, goal):
     '''
     When using parent-pointer method for path, this functuion recunstructs path using 
@@ -90,6 +107,20 @@ def reconstruct_path(parents, start, goal):
             break
     path.reverse()
     return path   
+
+def terrain_cost(position, maze):
+    '''
+    This function is needed when moves have different costs.
+    It will take the position and will return the cost of the move.
+    '''
+    row, col = position
+    if maze[row][col] in (".", "S", "G"):
+        cost = 1
+    elif maze[row][col] == "~":
+        cost = 3
+    elif maze[row][col] == "M":
+        cost = 7
+    return cost
 
 def bfs(maze, start, goal):
     '''
@@ -138,7 +169,7 @@ def bfs(maze, start, goal):
                 queue.append((neighbor, path + [neighbor]))
                 #print("neighbor of current is:", neighbor)
                 #print("new queue is:", queue)
-
+                
 def bfs_optimized(maze, start, goal):
     '''
     In this optimized version of BFS, 2 other options are added:
@@ -231,7 +262,6 @@ def dfs_graph(maze, start, goal):
                 stack.append((neighbor, path + [neighbor]))
                 #print("Stack Now:", stack)
 
-
 def dfs_path_based(maze, start, goal):
     '''
     This function uses path-based DFS.
@@ -323,7 +353,6 @@ def bfs_parent_pointer(maze, start, goal):
                     visited.add(neighbor)
                     #print("neighbor of current is:", neighbor)
 
-
 def dfs_graph_parent_pointer(maze, start, goal):
     '''
     In this version of Graph DFS, instead of keeping the path as a list of tuples,
@@ -374,6 +403,116 @@ def dfs_graph_parent_pointer(maze, start, goal):
                     parents[neighbor] = current
                 print("Stack Now:", stack)
 
+def ucs_similar_cost(maze, start, goal):
+    '''
+    This functions uses a simple version of UCS algorithm for educational purposes.
+    For now, every move costs 1.
+    '''
+    print("START UCS")
+    step_counter = 0
+    nodes_explored = 0
+    max_frontier_size = 0
+    total_cost = 0
+    frontier = list()
+    # Storing current position, total cost, and path.
+    heapq.heappush(frontier, (total_cost, start, [start]))
+    visited = set()
+
+
+    # As long as frontier is not empty:
+    while frontier:
+        # Emergency Stop -- disable after tests
+        step_counter+=1
+        if step_counter> 100:
+            print("Emergency Stop!")
+            break
+
+        max_frontier_size = max(max_frontier_size, len(frontier))
+        # Least cost first
+        total_cost, current, path = heapq.heappop(frontier)
+        print("Total cost is:", total_cost, "And current is:", current)
+        # As long as all moves' cost is positive this is okay, as each when each node is popped, ...
+        # the cheapest way to it has been found
+        if current in visited:
+            continue
+        nodes_explored+=1
+        print("current is:", current)
+        print("path now is:", path)
+        print("frontier is :", frontier)
+
+        visited.add(current)
+        # Goal test in UCS is after selecting a node
+        if current == goal:
+            print("Goal achieved!")
+            print("number of explored nodes:", nodes_explored)
+            print("max frontier size = ", max_frontier_size)
+            return path   
+        
+        for neighbor in get_neighbors(current, maze):
+            if neighbor not in visited:
+                print("Neighbor is:", neighbor)
+                heapq.heappush(frontier, (total_cost+1, neighbor, path+[neighbor]))
+
+def ucs(maze, start, goal):
+    '''
+    This functions uses a standard version of UCS algorithm used for non-negative edge costs.
+    In this version, moves have different cost:
+    "." = 1
+    "~" = 3
+    "M" = 7
+    '''
+    print("START UCS")
+    step_counter = 0
+    nodes_explored = 0
+    max_frontier_size = 0
+    total_cost = 0
+    frontier = list()
+    # Storing current position, total cost, and path.
+    heapq.heappush(frontier, (total_cost, start, [start]))
+    visited = set()
+
+
+    # As long as frontier is not empty:
+    while frontier:
+        # Emergency Stop -- disable after tests
+        step_counter+=1
+        if step_counter> 100:
+            print("Emergency Stop!")
+            break
+
+        max_frontier_size = max(max_frontier_size, len(frontier))
+        # Least cost first
+        total_cost, current, path = heapq.heappop(frontier)
+        current_node_cost = total_cost
+        print("Total cost is:", total_cost, "And current is:", current)
+        # As long as all moves' cost is positive this is okay, as each when each node is popped, ...
+        # the cheapest way to it has been found
+        if current in visited:
+            continue
+        nodes_explored+=1
+        print("current is:", current)
+        print("path now is:", path)
+        print("frontier is :", frontier)
+
+        visited.add(current)
+        # Goal test in UCS is after selecting a node
+        if current == goal:
+            print("Goal achieved!")
+            print("number of explored nodes:", nodes_explored)
+            print("max frontier size = ", max_frontier_size)
+            return path   
+        
+        for neighbor in get_neighbors(current, maze):
+            if neighbor not in visited:
+                print("Neighbor is:", neighbor)
+                move_cost = terrain_cost(neighbor, maze)
+                new_node_cost = current_node_cost + move_cost
+                print("Current node cost:", current_node_cost)
+                print("Move Cost:", move_cost)
+                print("New node cost:", new_node_cost)
+                heapq.heappush(frontier, (new_node_cost, neighbor, path+[neighbor]))
+                print("frontier is :", frontier)
+
 # display solution step-by-step
 def copy_maze(maze):
     return [row[:] for row in maze]
@@ -395,10 +534,9 @@ def print_maze(maze):
     for row in maze:
         print("  ".join(row))
 
-
 #Test1 - smaller maze:
-start = find_position(maze, "S")
-goal = find_position(maze, "G")
+#start = find_position(maze, "S")
+#goal = find_position(maze, "G")
 # BFS Test
 #path1 = bfs(maze, start, goal)
 #print("BFS path is: ", path1)
@@ -433,13 +571,19 @@ goal = find_position(maze, "G")
 #path6 = dfs_graph_parent_pointer(maze, start, goal)
 #print("Parent-Pointer Graph DFS path is: ", path6)
 #marked = mark_path(maze,path6)
-#rint("\nSolved Maze - Parent-Pointer Graph DFS:")
+#print("\nSolved Maze - Parent-Pointer Graph DFS:")
+#print_maze(marked)
+# UCS with similat move cost Test
+#path7 = ucs(maze, start, goal)
+#print("UCS path is: ", path7)
+#marked = mark_path(maze,path7)
+#print("\nSolved Maze - UCS:")
 #print_maze(marked)
 
 
 #Test2 -- bigger maze:
-start = find_position(maze2, "S")
-goal = find_position(maze2, "G")
+#start = find_position(maze2, "S")
+#goal = find_position(maze2, "G")
 # BFS Test:
 #path1 = bfs(maze2, start, goal)
 #print("BFS path is: ", path1)
@@ -476,11 +620,17 @@ goal = find_position(maze2, "G")
 #marked = mark_path(maze2,path6)
 #print("\nSolved Maze - Parent-Pointer Graph DFS:")
 #print_maze(marked)
+# UCS with similat move cost Test
+#path7 = ucs_similar_cost(maze2, start, goal)
+#print("UCS (similar move cost) path is: ", path7)
+#marked = mark_path(maze2,path7)
+#print("\nSolved Maze - UCS (similar move cost):")
+#print_maze(marked)
 
 
 #Test3 -- more complex maze (with more loops):
-start = find_position(maze3, "S")
-goal = find_position(maze3, "G")
+#start = find_position(maze3, "S")
+#goal = find_position(maze3, "G")
 # BFS Test:
 #path1 = bfs(maze3, start, goal)
 #print("BFS path is: ", path1)
@@ -512,8 +662,25 @@ goal = find_position(maze3, "G")
 #print("\nSolved Maze - Parent-Pointer BFS:")
 #print_maze(marked)
 # Parent-Pointer Graph DFS Test
-path6 = dfs_graph_parent_pointer(maze3, start, goal)
-print("Parent-Pointer Graph DFS path is: ", path6)
-marked = mark_path(maze3,path6)
-print("\nSolved Maze - Parent-Pointer Graph DFS:")
-print_maze(marked)
+#path6 = dfs_graph_parent_pointer(maze3, start, goal)
+#print("Parent-Pointer Graph DFS path is: ", path6)
+#marked = mark_path(maze3,path6)
+#print("\nSolved Maze - Parent-Pointer Graph DFS:")
+#print_maze(marked)
+# UCS with similat move cost Test
+#path7 = ucs_similar_cost(maze3, start, goal)
+#print("UCS (similar move cost) path is: ", path7)
+#marked = mark_path(maze3,path7)
+#print("\nSolved Maze - UCS (similar move cost):")
+#print_maze(marked)
+
+
+#Test 4 - Maze with different move cost
+start = find_position(maze4, "S")
+goal = find_position(maze4, "G")
+# UCS (non-negative move cost) Test
+#path8 = ucs(maze4, start, goal)
+#print("UCS (different move cost) path is: ", path8)
+#marked = mark_path(maze4,path8)
+#print("\nSolved Maze - UCS(different move cost):")
+#print_maze(marked)
