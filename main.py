@@ -519,7 +519,9 @@ def ucs_parent_pointer(maze, start, goal):
     total_cost = 0
     frontier = list()
     parents = dict()
-    # Storing current position, total cost.
+    # Storing current position, total cost, and parent.
+    # In parent pointer version of UCS, parent should travel with the active node, otherwise...
+    # finding the correct parent later will not be possible.
     heapq.heappush(frontier, (total_cost, start, None))
     parents[start] = None
     visited = set()
@@ -537,11 +539,11 @@ def ucs_parent_pointer(maze, start, goal):
         total_cost, current, parent= heapq.heappop(frontier)
         current_node_cost = total_cost
         print("Total cost is:", total_cost, "And current is:", current, "And parent is:", parent)
-        # As long as all moves' cost is positive this is okay, as each when each node is popped, ...
+        # As long as all moves' cost is positive this is okay, as when each node is popped, ...
         # the cheapest way to it has been found
         if current in visited:
             continue
-        # Assigning parent after popping to make sure that it is the best path
+        # Assigning parent after popping to make sure that it is the best path to that node
         parents[current] = parent
         nodes_explored+=1
         print("current is:", current)
@@ -568,6 +570,78 @@ def ucs_parent_pointer(maze, start, goal):
                 print("New node cost:", new_node_cost)
                 heapq.heappush(frontier, (new_node_cost, neighbor, current))
                 print("frontier is :", frontier)
+
+def dijkstra(maze, start, goal):
+    '''
+    This functions uses a dijkstra algorithm used for non-negative edge costs.
+    In this version, moves have different cost:
+    "." = 1
+    "~" = 3
+    "M" = 7
+    in this version instead of keeping the path as a list of tuples,
+    each node points to its parent, using a dictionary.
+    In this algorithm, the best cost is saved for more efficient parent keeping.
+    '''
+    print("START Dijkstra")
+    step_counter = 0
+    nodes_explored = 0
+    max_frontier_size = 0
+    current_cost = 0
+    frontier = list()
+    parents = dict()
+    # Storing current position, total cost, and parent.
+    # In parent pointer version of UCS, parent should travel with the active node, otherwise...
+    # finding the correct parent later will not be possible.
+    heapq.heappush(frontier, (current_cost, start, None))
+    parents[start] = None
+    # Stores the cheapest discovered cost to each node so far.
+    best_cost = dict()
+    best_cost[start] = 0
+
+    # As long as frontier is not empty:
+    while frontier:
+        # Emergency Stop -- disable after tests
+        step_counter+=1
+        if step_counter> 100:
+            print("Emergency Stop!")
+            break
+
+        max_frontier_size = max(max_frontier_size, len(frontier))
+        # Least cost first
+        current_cost, current, parent= heapq.heappop(frontier)
+        print("Total cost is:", current_cost, "And current is:", current, "And parent is:", parent)
+        # With non-negative edge costs, the first valid pop of a node guarantees ...
+        # the cheapest path to it has been found
+        if current_cost > best_cost[current]:
+            continue
+        # Assigning parent after popping to make sure that it is the best path
+        parents[current] = parent
+        nodes_explored+=1
+        print("current is:", current)
+        print("frontier is :", frontier)
+
+        # In Dijkstra, goal test is done after node selection
+        if current == goal:
+            path = reconstruct_path(parents, start, goal)
+            print("Goal achieved!")
+            print("number of explored nodes:", nodes_explored)
+            print("max frontier size = ", max_frontier_size)
+            return path   
+        
+        for neighbor in get_neighbors(current, maze):
+            print("Neighbor is:", neighbor)
+            row, col = neighbor
+            symbol = maze[row][col]
+            move_cost = terrain_cost(symbol)
+            new_node_cost = current_cost + move_cost
+            # Check if you have found a cheaper path to the state
+            old_cost = best_cost.get(neighbor, float("inf"))
+            if new_node_cost < old_cost:
+                # Relaxing an edge
+                best_cost[neighbor] = new_node_cost
+                heapq.heappush(frontier, (new_node_cost, neighbor, current))
+                print("frontier is :", frontier)
+
 
 # display solution step-by-step
 def copy_maze(maze):
@@ -741,8 +815,14 @@ goal = find_position(maze4, "G")
 #print("\nSolved Maze - UCS(different move cost):")
 #print_maze(marked)
 # UCS Parent-Pointer Test
-path9 = ucs_parent_pointer(maze4, start, goal)
-print("UCS (different move cost)-Parent-Pointer path is: ", path9)
-marked = mark_path(maze4,path9)
-print("\nSolved Maze - UCS(different move cost)-Parent-Pointer:")
+#path9 = ucs_parent_pointer(maze4, start, goal)
+#print("UCS (different move cost)-Parent-Pointer path is: ", path9)
+#marked = mark_path(maze4,path9)
+#print("\nSolved Maze - UCS(different move cost)-Parent-Pointer:")
+#print_maze(marked)
+# Dijkstra Test:
+path10 = dijkstra(maze4, start, goal)
+print("Dijkstra path is: ", path10)
+marked = mark_path(maze4,path10)
+print("\nSolved Maze - Dijkstra:")
 print_maze(marked)
