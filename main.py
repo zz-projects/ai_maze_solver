@@ -61,7 +61,7 @@ def get_neighbors(position, maze):
     '''
     This function takes the position and the maze as input
     and returns neighbors' positions that are possible to go to as output.
-    It trys to stay inside the grid and avoid walls.
+    It tries to stay inside the grid and avoid walls.
     '''
     row,col = position
     # up - right - down - left
@@ -83,7 +83,7 @@ def get_neighbors(position, maze):
             
 def reconstruct_path(parents, start, goal):
     '''
-    When using parent-pointer method for path, this functuion recunstructs path using 
+    When using parent-pointer method for path, this functuion reconstructs path using 
     parents dictionaty, goal, and start.
     '''
     step_counter = 0
@@ -139,7 +139,7 @@ def bfs(maze, start, goal):
             print("max queue size = ", max_queue_size)
             return path
         
-        # skipping the previosuly visited
+        # skipping the previously visited
         if current in visited:
             #print(f"state {current} was already visited so skipped")
             continue
@@ -472,8 +472,8 @@ def ucs(maze, start, goal):
         total_cost, current, path = heapq.heappop(frontier)
         current_node_cost = total_cost
         print("Total cost is:", total_cost, "And current is:", current)
-        # As long as all moves' cost is positive this is okay, as each when each node is popped, ...
-        # the cheapest way to it has been found
+        # With non-negative edge costs, the first valid pop of a node guarantees ...
+        # the cheapest path to it has been found
         if current in visited:
             continue
         nodes_explored+=1
@@ -539,8 +539,8 @@ def ucs_parent_pointer(maze, start, goal):
         total_cost, current, parent= heapq.heappop(frontier)
         current_node_cost = total_cost
         print("Total cost is:", total_cost, "And current is:", current, "And parent is:", parent)
-        # As long as all moves' cost is positive this is okay, as when each node is popped, ...
-        # the cheapest way to it has been found
+        # With non-negative edge costs, the first valid pop of a node guarantees ...
+        # the cheapest path to it has been found
         if current in visited:
             continue
         # Assigning parent after popping to make sure that it is the best path to that node
@@ -612,6 +612,7 @@ def dijkstra(maze, start, goal):
         print("Total cost is:", current_cost, "And current is:", current, "And parent is:", parent)
         # With non-negative edge costs, the first valid pop of a node guarantees ...
         # the cheapest path to it has been found
+        # frontier entery with worse cost than the best cost so far is ignored
         if current_cost > best_cost[current]:
             continue
         # Assigning parent after popping to make sure that it is the best path
@@ -642,6 +643,55 @@ def dijkstra(maze, start, goal):
                 heapq.heappush(frontier, (new_node_cost, neighbor, current))
                 print("frontier is :", frontier)
 
+def dldfs(maze, start, goal, max_depth):
+    '''
+    Depth-Limited DFS is a variation of DFS that limit how deep the search can go.
+    It helps prevent excessive exploration in very deep or infinite seach spaces.
+    If the depth limit is too small, it may fail to find a solution even if one exists. 
+    If the depth limit is too large, it behaves like normal DFS and may spend a long time 
+    exploring deep non-optimal branches.   
+    
+    This function uses path-based DFS.
+    No explored set is used, instead new nodes are checked with active path.
+    The path is stored as a list of tuples.
+    '''
+    #step_counter = 0
+    nodes_explored = 0
+    max_stack_size = 0
+    depth = 0
+    print("START Path-Based DLDFS (Depth-Limited DFS)")
+    stack = deque()
+    stack.append((start,[start], depth))
+
+    while stack:
+        #Emergency Stop
+        #step_counter+=1
+        #if step_counter> 100:
+            #print("Emergency Stop!")
+            #break
+
+        max_stack_size = max(max_stack_size, len(stack))
+        #LIFO
+        current, path, depth = stack.pop()
+        nodes_explored += 1
+        #print("current is:", current)
+        #print("path now is:", path)
+        #print("stack is :", stack)
+
+        # Goal test (DLDFS's goal test is right after choosing the node)
+        if current == goal:
+            print("Goal achieved!")
+            print("number of explored nodes:", nodes_explored)
+            print("max stack size = ", max_stack_size)
+            return path        
+        
+        # keep preference of choosing neighbors: up - right - down - left
+        for neighbor in reversed(get_neighbors(current, maze)):
+            if neighbor not in path:
+                #print("neighbor is:", neighbor)
+                if depth<max_depth:
+                    stack.append((neighbor, path + [neighbor], depth+1))
+                    print("Stack Now:", stack)
 
 # display solution step-by-step
 def copy_maze(maze):
@@ -665,8 +715,8 @@ def print_maze(maze):
         print("  ".join(row))
 
 #Test1 - smaller maze:
-#start = find_position(maze, "S")
-#goal = find_position(maze, "G")
+start = find_position(maze, "S")
+goal = find_position(maze, "G")
 # BFS Test
 #path1 = bfs(maze, start, goal)
 #print("BFS path is: ", path1)
@@ -708,6 +758,12 @@ def print_maze(maze):
 #print("UCS path is: ", path7)
 #marked = mark_path(maze,path7)
 #print("\nSolved Maze - UCS:")
+#print_maze(marked)
+# DLDFS (Depth- Limited DFS) Test
+#path8 = dldfs(maze, start, goal, max_depth = 9)
+#print("DLDFS (Depth- Limited DFS) path is: ", path8)
+#marked = mark_path(maze,path8)
+#print("\nSolved Maze - DLDFS (Depth- Limited DFS) :")
 #print_maze(marked)
 
 
@@ -756,11 +812,17 @@ def print_maze(maze):
 #marked = mark_path(maze2,path7)
 #print("\nSolved Maze - UCS (similar move cost):")
 #print_maze(marked)
+# DLDFS (Depth- Limited DFS) Test
+#path8 = dldfs(maze2, start, goal, max_depth = 11)
+#print("DLDFS (Depth- Limited DFS) path is: ", path8)
+#marked = mark_path(maze2,path8)
+#print("\nSolved Maze - DLDFS (Depth- Limited DFS) :")
+#print_maze(marked)
 
 
 #Test3 -- more complex maze (with more loops):
-#start = find_position(maze3, "S")
-#goal = find_position(maze3, "G")
+start = find_position(maze3, "S")
+goal = find_position(maze3, "G")
 # BFS Test:
 #path1 = bfs(maze3, start, goal)
 #print("BFS path is: ", path1)
@@ -803,7 +865,12 @@ def print_maze(maze):
 #marked = mark_path(maze3,path7)
 #print("\nSolved Maze - UCS (similar move cost):")
 #print_maze(marked)
-
+# DLDFS (Depth- Limited DFS) Test
+path8 = dldfs(maze3, start, goal, max_depth = 8)
+print("DLDFS (Depth- Limited DFS) path is: ", path8)
+marked = mark_path(maze3,path8)
+print("\nSolved Maze - DLDFS (Depth- Limited DFS) :")
+print_maze(marked)
 
 #Test 4 - Maze with different move cost
 start = find_position(maze4, "S")
@@ -821,8 +888,8 @@ goal = find_position(maze4, "G")
 #print("\nSolved Maze - UCS(different move cost)-Parent-Pointer:")
 #print_maze(marked)
 # Dijkstra Test:
-path10 = dijkstra(maze4, start, goal)
-print("Dijkstra path is: ", path10)
-marked = mark_path(maze4,path10)
-print("\nSolved Maze - Dijkstra:")
-print_maze(marked)
+#path10 = dijkstra(maze4, start, goal)
+#print("Dijkstra path is: ", path10)
+#marked = mark_path(maze4,path10)
+#print("\nSolved Maze - Dijkstra:")
+#print_maze(marked)
