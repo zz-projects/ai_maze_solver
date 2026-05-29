@@ -700,14 +700,18 @@ def copy_maze(maze):
 def mark_path(maze, path):
     step = 0
     new_maze = copy_maze(maze)
-    print("\nStep 0 --- Initial Maze:")
-    print_maze(new_maze)
-    for (x,y) in path:
-        if (x,y) != path[0] and (x,y) != path[-1]:
-            new_maze[x][y] = "*"
-            step+=1
-            print(f"\nStep {step}:")
-            print_maze(new_maze)
+
+    if path == None:
+        print("Goal Not Found!")
+    else:
+        print("\nStep 0 --- Initial Maze:")
+        print_maze(new_maze)
+        for (x,y) in path:
+            if (x,y) != path[0] and (x,y) != path[-1]:
+                new_maze[x][y] = "*"
+                step+=1
+                print(f"\nStep {step}:")
+                print_maze(new_maze)
     return new_maze
 
 def print_maze(maze):
@@ -866,11 +870,12 @@ goal = find_position(maze3, "G")
 #print("\nSolved Maze - UCS (similar move cost):")
 #print_maze(marked)
 # DLDFS (Depth- Limited DFS) Test
-path8 = dldfs(maze3, start, goal, max_depth = 8)
+path8 = dldfs(maze3, start, goal, max_depth = 7)
 print("DLDFS (Depth- Limited DFS) path is: ", path8)
 marked = mark_path(maze3,path8)
-print("\nSolved Maze - DLDFS (Depth- Limited DFS) :")
-print_maze(marked)
+if path8 != None:
+    print("\nSolved Maze - DLDFS (Depth- Limited DFS) :")
+    print_maze(marked)
 
 #Test 4 - Maze with different move cost
 start = find_position(maze4, "S")
