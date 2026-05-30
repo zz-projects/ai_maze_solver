@@ -643,7 +643,7 @@ def dijkstra(maze, start, goal):
                 heapq.heappush(frontier, (new_node_cost, neighbor, current))
                 print("frontier is :", frontier)
 
-def dldfs(maze, start, goal, max_depth):
+def dldfs(maze, start, goal, depth_limit):
     '''
     Depth-Limited DFS is a variation of DFS that limit how deep the search can go.
     It helps prevent excessive exploration in very deep or infinite seach spaces.
@@ -689,9 +689,59 @@ def dldfs(maze, start, goal, max_depth):
         for neighbor in reversed(get_neighbors(current, maze)):
             if neighbor not in path:
                 #print("neighbor is:", neighbor)
-                if depth<max_depth:
+                if depth<depth_limit:
                     stack.append((neighbor, path + [neighbor], depth+1))
                     print("Stack Now:", stack)
+
+def dls_helper(maze, start, goal, depth_limit,path=None):
+    '''
+    Recursive Depth-Limited DFS is a variation of DFS that limit how deep the search can go.
+    Handles path exploration without worrying about stats and printing.
+    It helps prevent excessive exploration in very deep or infinite seach spaces.
+    If the depth limit is too small, it may fail to find a solution even if one exists. 
+    If the depth limit is too large, it behaves like normal DFS and may spend a long time 
+    exploring deep non-optimal branches.   
+    
+    This function uses path-based DFS.
+    No explored set is used, instead new nodes are checked with active path.
+    The path is stored as a list of tuples.
+    Stats are taken care of in wrapper function.
+    '''
+
+    if path is None:
+        path = []
+    path = path + [start]
+    
+    # Goal test (DLDFS's goal test is right after choosing the node)
+    if start == goal:
+        # Return the path when the goal is found
+        return path 
+
+    if depth_limit == 0:
+        # cutoff
+        return None
+
+    for neighbor in reversed(get_neighbors(start, maze)):
+        if neighbor not in path:
+            result = dls_helper(maze, neighbor, goal, depth_limit-1,path)
+            if result is not None:
+                return result
+    # if no neighbor lead to solution
+    return None
+
+def dls(maze, start, goal, depth_limit):
+    '''
+    Depth-Limited DFS main function.
+    Initializes path and prints status.
+    '''
+    print(f"Start Recursive DLS with depth limit = {depth_limit}")
+    path = dls_helper(maze, start, goal, depth_limit)
+    if path:
+        print("Goal achieved!")
+    else:
+        print("No path found at this path.")
+    return path
+
 
 # display solution step-by-step
 def copy_maze(maze):
@@ -701,7 +751,7 @@ def mark_path(maze, path):
     step = 0
     new_maze = copy_maze(maze)
 
-    if path == None:
+    if path is None:
         print("Goal Not Found!")
     else:
         print("\nStep 0 --- Initial Maze:")
@@ -870,11 +920,26 @@ goal = find_position(maze3, "G")
 #print("\nSolved Maze - UCS (similar move cost):")
 #print_maze(marked)
 # DLDFS (Depth- Limited DFS) Test
-path8 = dldfs(maze3, start, goal, max_depth = 7)
-print("DLDFS (Depth- Limited DFS) path is: ", path8)
-marked = mark_path(maze3,path8)
-if path8 != None:
-    print("\nSolved Maze - DLDFS (Depth- Limited DFS) :")
+#path8 = dldfs(maze3, start, goal, depth_limit = 8)
+#print("DLDFS (Depth- Limited DFS) path is: ", path8)
+#marked = mark_path(maze3,path8)
+#if path8 != None:
+#    print("\nSolved Maze - DLDFS (Depth-Limited DFS) :")
+#    print_maze(marked)
+# Recursive DLDFS (Depth-Limited DFS) Test:
+#print("START Recursive Path-Based DLDFS (Depth-Limited DFS)")
+#path9 = dls_helper(maze3, start, goal, depth_limit = 8)
+#print("DLDFS (Depth-Limited DFS) path is: ", path9)
+#marked = mark_path(maze3,path9)
+#if path9 != None:
+#    print("\nSolved Maze - Recursive DLDFS (Depth-Limited DFS) :")
+#    print_maze(marked)
+# Recursive DLDFS (Depth-Limited DFS) with wrapper Test:
+path10 = dls(maze3, start, goal, depth_limit = 8)
+print("DLDFS (Depth-Limited DFS) path is: ", path10)
+marked = mark_path(maze3,path10)
+if path10 != None:
+    print("\nSolved Maze - Recursive DLDFS (Depth-Limited DFS) :")
     print_maze(marked)
 
 #Test 4 - Maze with different move cost
