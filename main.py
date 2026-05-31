@@ -742,6 +742,101 @@ def dls(maze, start, goal, depth_limit):
         print("No path found at this path.")
     return path
 
+def iddfs(maze, start, goal):
+    '''
+    Iterative Deepening Depth-First Search (IDDFS) is a search algorithm 
+    that combines the space efficiency of Depth-First Search(DFS) with the optimality of Breadth-First Search(BFS. 
+    It performs a series of depth-limited searches, increasing the depth limit with each iteration 
+    until it finds the goal. This approach allows it to find the optimal solution while using less memory than BFS.
+    '''
+    step_counter = 0
+    depth_limit = 0
+    print("Start Iterative Deepening Depth-First Search (IDDFS):")
+
+    while True:
+        step_counter +=1
+        if step_counter > 100:
+            print("Emergency Stop!")
+            return None
+        result = dls_helper(maze, start, goal, depth_limit)
+        if result:
+            print("Goal achieved!")
+            return result
+        else:
+            depth_limit +=1
+            print(f"No path found at depth limit = {depth_limit-1}. Increasing depth limit to {depth_limit} and restarting DLS.")
+
+def dls_helper_adv(maze, start, goal, depth_limit,path=None):
+    '''
+    Helper function specifically for iddfs_adv funtion.
+    This is a move advanced version of Iterative Deepening Depth-First Search (IDDFS), 
+    that differentiates success, cutoff, and failure (not only success and None). 
+    '''
+    if path is None:
+        path = []
+    path = path + [start]
+    cutoff_occured = False
+    
+    # Goal test (DLDFS's goal test is right after choosing the node)
+    if start == goal:
+        # Return the path when the goal is found
+        return "success", path 
+
+    if depth_limit == 0:
+        # When depth limit gets 0, it means only check that node (done in previous step)
+        # and don't generate child nodes 
+        # cutoff
+        return "cutoff", None
+
+    for neighbor in reversed(get_neighbors(start, maze)):
+        if neighbor not in path:
+            # child nodes are getting explored
+            result = dls_helper_adv(maze, neighbor, goal, depth_limit-1,path)
+            (status, result_path) = result
+            if status == "success":
+                return result
+            if status == "cutoff":
+                cutoff_occured = True
+                continue
+            if status == "failure":
+                continue
+    if cutoff_occured == True:
+        return "cutoff", None
+    else:
+        # all children failed completely
+        return "failure", None
+
+def iddfs_adv(maze, start, goal):
+    ''' 
+    This is a move advanced version of Iterative Deepening Depth-First Search (IDDFS), 
+    that differentiates success, cutoff, and failure. 
+    But as the visualization function later only takes path as the input ...
+    it was necessary to keep the final output to be only the path.
+    This might feel like there is inconsistancy between the helper and main function, 
+    but it is done for consistant visualization.
+    '''
+    depth_counter = 0
+    depth_limit = 0
+    print("Start Iterative Deepening Depth-First Search (IDDFS):")
+
+    while True:
+        # This is actually the same as previous versions of step_counter (to prevent infinite loops),...
+        # But as it represented the depth, the name was changed to depth for more clarity
+        depth_counter +=1
+        if depth_counter > 100:
+            print("Emergency Stop!")
+            return None
+        result = dls_helper_adv(maze, start, goal, depth_limit)
+        (status, result_path) = result
+        if status == "success":
+            return result_path
+        if status == "failure":
+            print("Goal not found!")
+            return None
+        else:
+            depth_limit +=1
+            print(f"Cutoff! No path found at depth limit = {depth_limit-1}. Increasing depth limit to {depth_limit} and restarting DLS.")
+            
 
 # display solution step-by-step
 def copy_maze(maze):
@@ -935,11 +1030,25 @@ goal = find_position(maze3, "G")
 #    print("\nSolved Maze - Recursive DLDFS (Depth-Limited DFS) :")
 #    print_maze(marked)
 # Recursive DLDFS (Depth-Limited DFS) with wrapper Test:
-path10 = dls(maze3, start, goal, depth_limit = 8)
-print("DLDFS (Depth-Limited DFS) path is: ", path10)
-marked = mark_path(maze3,path10)
-if path10 != None:
-    print("\nSolved Maze - Recursive DLDFS (Depth-Limited DFS) :")
+#path10 = dls(maze3, start, goal, depth_limit = 8)
+#print("DLDFS (Depth-Limited DFS) path is: ", path10)
+#marked = mark_path(maze3,path10)
+#if path10 != None:
+#    print("\nSolved Maze - Recursive DLDFS (Depth-Limited DFS) :")
+#    print_maze(marked)
+# IDDFS Test:
+#path11 = iddfs(maze3, start, goal)
+#print("IDDFS (Iterative Deepening DFS) path is: ", path11)
+#marked = mark_path(maze3,path11)
+#if path11 != None:
+#    print("\nSolved Maze - IDDFS (Iterative Deepening DFS) :")
+#    print_maze(marked)
+# IDDFS (advanced )Test:
+path12 = iddfs_adv(maze3, start, goal)
+print("IDDFS (Iterative Deepening DFS) path is: ", path12)
+marked = mark_path(maze3,path12)
+if path12 != None:
+    print("\nSolved Maze - IDDFS (Iterative Deepening DFS) :")
     print_maze(marked)
 
 #Test 4 - Maze with different move cost
