@@ -80,7 +80,7 @@ def get_neighbors(position, maze):
 #Test:
 #p1 = (4,4)
 #print(get_neighbors(p1,maze))
-            
+
 def reconstruct_path(parents, start, goal):
     '''
     When using parent-pointer method for path, this functuion reconstructs path using 
@@ -174,7 +174,13 @@ def bfs_optimized(maze, start, goal):
     #print("queue now is:", queue)
     visited = set()
     visited.add(start)
-
+    # goal test of start node:(as in standard BFS goal test is done when creating a child node ...
+    # start node should be checked separately) (in a maze this is not possible...
+    # yet is was added for reminding)
+    if start == goal:
+        print("Goal achieved!")
+        return [start]
+        
     # continue as long as there are positions to explore
     while queue:
         max_queue_size = max(max_queue_size, len(queue))
@@ -308,6 +314,13 @@ def bfs_parent_pointer(maze, start, goal):
     print("queue now is:", queue)
     visited = set()
     visited.add(start)
+    
+    # goal test of start node:(as goal test is done when creating a child node ...
+    # start node should be checked separately) (in a maze this is not possible...
+    # yet is was added for reminding)
+    if start == goal:
+        print("Goal achieved!")
+        return [start]
 
     # continue as long as there are positions to explore
     while queue:
@@ -836,7 +849,457 @@ def iddfs_adv(maze, start, goal):
         else:
             depth_limit +=1
             print(f"Cutoff! No path found at depth limit = {depth_limit-1}. Increasing depth limit to {depth_limit} and restarting DLS.")
-            
+
+def bi_bfs_frontier(maze, start, goal):
+    '''
+    This algorithm uses Bidirectional search which contains 2 Parent-Pointer BFS searches.
+    One of these BFS searches start from start point and the other BFS starts with goal point.
+    And they move toward each other until they find a shared point.
+    Then the path is reconstructed.
+    This version detects meeting using frontiers.
+    '''
+    nodes_explored = 0
+    max_queue1_size = 0
+    max_queue2_size = 0
+    max_total_queue_size = 0
+    # variables for BFS from start
+    #In this dictionary if you call a child(key), it will give you the parent(value)
+    parents1 = dict()
+    print("START Parent-Pointer BFS - from start")
+    queue1 = deque()
+    # storing current position
+    queue1.append(start)
+    parents1[start] = None
+    print("queue from start now is:", queue1)
+    visited1 = set()
+    visited1.add(start)
+    # variables for BFS from goal
+    #In this dictionary if you call a child(key), it will give you the parent(value)
+    parents2 = dict()
+    print("START Parent-Pointer BFS - from goal")
+    queue2 = deque()
+    # storing current position
+    queue2.append(goal)
+    parents2[goal] = None
+    print("queue from goal now is:", queue2)
+    visited2 = set()
+    visited2.add(goal)
+    path1 = list()
+    path2 = list()
+
+    # goal test of start node (of course this is not possible in the maze but it was added anyways ...
+    # for reminding that start node should also be checked for being the goal in most cases.):
+    if start == goal:
+        return [start]
+
+    # once BFS from start run then once BFS from goal then repeat
+    while True:
+        # when maze is unsolvable
+        if not queue1 or not queue2: 
+            return None
+
+        # BFS from start
+        max_queue1_size = max(max_queue1_size, len(queue1))
+        max_total_queue_size = len(queue1)+ len(queue2)
+        #FIFO 
+        current = queue1.popleft()
+        nodes_explored += 1
+        print("current is:", current)
+        print("queue from start is :", queue1)
+
+
+        # expanding neighbors (+ excluding repeated neighbors)
+        for neighbor in get_neighbors(current, maze):
+            # Test for possible shared node
+            if neighbor in queue2:
+                print("Goal path found!")
+                parents1[neighbor] = current
+                path1 = reconstruct_path(parents1, start, neighbor)
+                print("This is path from start to shared node:", path1)
+                path2 = list(reversed(reconstruct_path(parents2, goal, neighbor)))
+                print("number of explored nodes:", nodes_explored)
+                print("max queue1 size = ", max_queue1_size)
+                print("max queue2 size = ", max_queue2_size)
+                print("max total queue size = ", max_total_queue_size)
+                path = path1 + path2[1:]
+                return path
+            # in BFS, for prevention of repeated nodes, the new child nodes should be checked with explored and 
+            # in this code, we add neighbors to visited (which includes both explored and frontier), so we are...
+            # checking both in one place (they are all in one set)
+            if neighbor not in visited1:
+                #print("neighbor not in visited")
+                queue1.append(neighbor)
+                parents1[neighbor] = current
+                visited1.add(neighbor)
+                #print("neighbor of current is:", neighbor)
+        
+        # BFS from goal
+        max_queue2_size = max(max_queue2_size, len(queue2))
+        max_total_queue_size = len(queue1)+ len(queue2)
+        #FIFO 
+        current = queue2.popleft()
+        nodes_explored += 1
+        print("current is:", current)
+        print("queue from goal is :", queue2)
+        # expanding neighbors (+ excluding repeated neighbors)
+        for neighbor in get_neighbors(current, maze):
+            # Test for possible shared node
+            if neighbor in queue1:
+                print("Goal path found!")
+                parents2[neighbor] = current
+                path1 = reconstruct_path(parents1, start, neighbor)
+                path2 = list(reversed(reconstruct_path(parents2, goal, neighbor)))
+                print("This is reversed path from goal to shared node:", path2)
+                print("number of explored nodes:", nodes_explored)
+                print("max queue1 size = ", max_queue1_size)
+                print("max queue2 size = ", max_queue2_size)
+                print("max total queue size = ", max_total_queue_size)
+                print("path 2 is :", path2)
+                path = path1 + path2[1:]
+                return path
+            # in BFS, for prevention of repeated nodes, the new child nodes should be checked with explored and 
+            # in this code, we add neighbors to visited (which includes both explored and frontier), so we are...
+            # checking both in one place (they are all in one set)
+            if neighbor not in visited2:
+                #print("neighbor not in visited")
+                queue2.append(neighbor)
+                parents2[neighbor] = current
+                visited2.add(neighbor)
+                #print("neighbor of current is:", neighbor)
+
+def bi_bfs_visited(maze, start, goal):
+    '''
+    This algorithm uses Bidirectional search which contains 2 Parent-Pointer BFS searches.
+    One of these BFS searches start from start point and the other BFS starts with goal point.
+    And they move toward each other until they find a shared point.
+    Then the path is reconstructed.
+    This version detects meeting using explored sets(in here: visited set).
+    '''
+    nodes_explored = 0
+    max_queue1_size = 0
+    max_queue2_size = 0
+    max_total_queue_size = 0
+    # variables for BFS from start
+    #In this dictionary if you call a child(key), it will give you the parent(value)
+    parents1 = dict()
+    print("START Parent-Pointer BFS - from start")
+    queue1 = deque()
+    # storing current position
+    queue1.append(start)
+    parents1[start] = None
+    print("queue from start now is:", queue1)
+    visited1 = set()
+    visited1.add(start)
+    # variables for BFS from goal
+    #In this dictionary if you call a child(key), it will give you the parent(value)
+    parents2 = dict()
+    print("START Parent-Pointer BFS - from goal")
+    queue2 = deque()
+    # storing current position
+    queue2.append(goal)
+    parents2[goal] = None
+    print("queue from goal now is:", queue2)
+    visited2 = set()
+    visited2.add(goal)
+    path1 = list()
+    path2 = list()
+
+    # goal test of start node (of course this is not possible in the maze but it was added anyways ...
+    # for reminding that start node should also be checked for being the goal in most cases.):
+    if start == goal:
+        return [start]
+
+    # once BFS from start run then once BFS from goal then repeat
+    while True:
+        # when maze is unsolvable
+        if not queue1 or not queue2: 
+            return None  
+              
+        # BFS from start
+        max_queue1_size = max(max_queue1_size, len(queue1))
+        max_total_queue_size = len(queue1)+ len(queue2)
+        #FIFO 
+        current = queue1.popleft()
+        nodes_explored += 1
+        print("current is:", current)
+        print("queue from start is :", queue1)
+
+
+        # expanding neighbors (+ excluding repeated neighbors)
+        for neighbor in get_neighbors(current, maze):
+            # Test for possible shared node
+            if neighbor in visited2:
+                print("Goal path found!")
+                parents1[neighbor] = current
+                path1 = reconstruct_path(parents1, start, neighbor)
+                print("This is path from start to shared node:", path1)
+                path2 = list(reversed(reconstruct_path(parents2, goal, neighbor)))
+                print("number of explored nodes:", nodes_explored)
+                print("max queue1 size = ", max_queue1_size)
+                print("max queue2 size = ", max_queue2_size)
+                print("max total queue size = ", max_total_queue_size)
+                path = path1 + path2[1:]
+                return path
+            # in BFS, for prevention of repeated nodes, the new child nodes should be checked with explored and 
+            # in this code, we add neighbors to visited (which includes both explored and frontier), so we are...
+            # checking both in one place (they are all in one set)
+            if neighbor not in visited1:
+                #print("neighbor not in visited")
+                queue1.append(neighbor)
+                parents1[neighbor] = current
+                visited1.add(neighbor)
+                #print("neighbor of current is:", neighbor)
+        
+        # BFS from goal
+        max_queue2_size = max(max_queue2_size, len(queue2))
+        max_total_queue_size = len(queue1)+ len(queue2)
+        #FIFO 
+        current = queue2.popleft()
+        nodes_explored += 1
+        print("current is:", current)
+        print("queue from goal is :", queue2)
+        # expanding neighbors (+ excluding repeated neighbors)
+        for neighbor in get_neighbors(current, maze):
+            # Test for possible shared node
+            if neighbor in visited1:
+                print("Goal path found!")
+                parents2[neighbor] = current
+                path1 = reconstruct_path(parents1, start, neighbor)
+                path2 = list(reversed(reconstruct_path(parents2, goal, neighbor)))
+                print("This is reversed path from goal to shared node:", path2)
+                print("number of explored nodes:", nodes_explored)
+                print("max queue1 size = ", max_queue1_size)
+                print("max queue2 size = ", max_queue2_size)
+                print("max total queue size = ", max_total_queue_size)
+                print("path 2 is :", path2)
+                path = path1 + path2[1:]
+                return path
+            # in BFS, for prevention of repeated nodes, the new child nodes should be checked with explored and 
+            # in this code, we add neighbors to visited (which includes both explored and frontier), so we are...
+            # checking both in one place (they are all in one set)
+            if neighbor not in visited2:
+                #print("neighbor not in visited")
+                queue2.append(neighbor)
+                parents2[neighbor] = current
+                visited2.add(neighbor)
+                #print("neighbor of current is:", neighbor)
+
+def bi_bfs_visited_adv(maze, start, goal):
+    '''
+    This algorithm uses Bidirectional search which contains 2 Parent-Pointer BFS searches.
+    One of these BFS searches start from start point and the other BFS starts with goal point.
+    And they move toward each other until they find a shared point. 
+    In the advanced version, the smaller frontier has a priority to be expanded. 
+    Then the path is reconstructed.
+    This version detects meeting using explored sets(in here: visited set).
+    '''
+    nodes_explored = 0
+    max_queue1_size = 0
+    max_queue2_size = 0
+    max_total_queue_size = 0
+    # variables for BFS from start
+    #In this dictionary if you call a child(key), it will give you the parent(value)
+    parents1 = dict()
+    print("START Parent-Pointer BFS - from start")
+    queue1 = deque()
+    # storing current position
+    queue1.append(start)
+    parents1[start] = None
+    print("queue from start now is:", queue1)
+    visited1 = set()
+    visited1.add(start)
+    # variables for BFS from goal
+    #In this dictionary if you call a child(key), it will give you the parent(value)
+    parents2 = dict()
+    print("START Parent-Pointer BFS - from goal")
+    queue2 = deque()
+    # storing current position
+    queue2.append(goal)
+    parents2[goal] = None
+    print("queue from goal now is:", queue2)
+    visited2 = set()
+    visited2.add(goal)
+    path1 = list()
+    path2 = list()
+
+    # goal test of start node (of course this is not possible in the maze but it was added anyways ...
+    # for reminding that start node should also be checked for being the goal in most cases.):
+    if start == goal:
+        return [start]
+
+    # once BFS from start run then once BFS from goal then repeat
+    while True:
+        # when maze is unsolvable
+        if not queue1 or not queue2: 
+            return None  
+              
+    
+        if len(queue1) <= len(queue2):
+            # BFS from start
+            max_queue1_size = max(max_queue1_size, len(queue1))
+            max_total_queue_size = len(queue1)+ len(queue2)
+            #FIFO 
+            current = queue1.popleft()
+            nodes_explored += 1
+            print("current is:", current)
+            print("queue from start is :", queue1)
+
+
+            # expanding neighbors (+ excluding repeated neighbors)
+            for neighbor in get_neighbors(current, maze):
+                # Test for possible shared node
+                if neighbor in visited2:
+                    print("Goal path found!")
+                    parents1[neighbor] = current
+                    path1 = reconstruct_path(parents1, start, neighbor)
+                    print("This is path from start to shared node:", path1)
+                    path2 = list(reversed(reconstruct_path(parents2, goal, neighbor)))
+                    print("number of explored nodes:", nodes_explored)
+                    print("max queue1 size = ", max_queue1_size)
+                    print("max queue2 size = ", max_queue2_size)
+                    print("max total queue size = ", max_total_queue_size)
+                    path = path1 + path2[1:]
+                    return path
+                # in BFS, for prevention of repeated nodes, the new child nodes should be checked with explored and 
+                # in this code, we add neighbors to visited (which includes both explored and frontier), so we are...
+                # checking both in one place (they are all in one set)
+                if neighbor not in visited1:
+                    #print("neighbor not in visited")
+                    queue1.append(neighbor)
+                    parents1[neighbor] = current
+                    visited1.add(neighbor)
+                    #print("neighbor of current is:", neighbor)
+        else:
+            # BFS from goal
+            max_queue2_size = max(max_queue2_size, len(queue2))
+            max_total_queue_size = len(queue1)+ len(queue2)
+            #FIFO 
+            current = queue2.popleft()
+            nodes_explored += 1
+            print("current is:", current)
+            print("queue from goal is :", queue2)
+            # expanding neighbors (+ excluding repeated neighbors)
+            for neighbor in get_neighbors(current, maze):
+                # Test for possible shared node
+                if neighbor in visited1:
+                    print("Goal path found!")
+                    parents2[neighbor] = current
+                    path1 = reconstruct_path(parents1, start, neighbor)
+                    path2 = list(reversed(reconstruct_path(parents2, goal, neighbor)))
+                    print("This is reversed path from goal to shared node:", path2)
+                    print("number of explored nodes:", nodes_explored)
+                    print("max queue1 size = ", max_queue1_size)
+                    print("max queue2 size = ", max_queue2_size)
+                    print("max total queue size = ", max_total_queue_size)
+                    print("path 2 is :", path2)
+                    path = path1 + path2[1:]
+                    return path
+                # in BFS, for prevention of repeated nodes, the new child nodes should be checked with explored and 
+                # in this code, we add neighbors to visited (which includes both explored and frontier), so we are...
+                # checking both in one place (they are all in one set)
+                if neighbor not in visited2:
+                    #print("neighbor not in visited")
+                    queue2.append(neighbor)
+                    parents2[neighbor] = current
+                    visited2.add(neighbor)
+                    #print("neighbor of current is:", neighbor)
+
+def bi_bfs_visited_adv_usinghelper(maze, start, goal):
+    '''
+    This algorithm uses Bidirectional search which contains 2 Parent-Pointer BFS searches.
+    One of these BFS searches start from start point and the other BFS starts with goal point.
+    And they move toward each other until they find a shared point. 
+    In the advanced version, the smaller frontier has a priority to be expanded. 
+    Then the path is reconstructed.
+    This version detects meeting using explored sets(in here: visited set).
+    '''
+    nodes_explored = 0
+    # variables for BFS from start
+    #In this dictionary if you call a child(key), it will give you the parent(value)
+    parents1 = dict()
+    print("START Parent-Pointer BFS - from start")
+    queue1 = deque()
+    # storing current position
+    queue1.append(start)
+    parents1[start] = None
+    print("queue from start now is:", queue1)
+    visited1 = set()
+    visited1.add(start)
+    # variables for BFS from goal
+    #In this dictionary if you call a child(key), it will give you the parent(value)
+    parents2 = dict()
+    print("START Parent-Pointer BFS - from goal")
+    queue2 = deque()
+    # storing current position
+    queue2.append(goal)
+    parents2[goal] = None
+    print("queue from goal now is:", queue2)
+    visited2 = set()
+    visited2.add(goal)
+    path1 = list()
+    path2 = list()
+
+    # goal test of start node (of course this is not possible in the maze but it was added anyways ...
+    # for reminding that start node should also be checked for being the goal in most cases.):
+    if start == goal:
+        return [start]
+
+    # once BFS from start run then once BFS from goal then repeat
+    while True:
+        # when maze is unsolvable
+        if not queue1 or not queue2: 
+            return None  
+              
+        if len(queue1) <= len(queue2):
+            result1 = bi_bfs_helper(maze, queue1, visited1, visited2, parents1, nodes_explored)
+            (nodes_explored, neighbor, status) = result1
+            # path reconstruction
+            if status == "success":
+                path1 = reconstruct_path(parents1, start, neighbor)
+                path2 = list(reversed(reconstruct_path(parents2, goal, neighbor)))
+                path = path1 + path2[1:]
+                print("Path is:", path1)
+                print("number of explored nodes:", nodes_explored)
+                return path
+ 
+        else:
+            result2 = bi_bfs_helper(maze, queue2, visited2, visited1, parents2, nodes_explored)
+            (nodes_explored, neighbor, status) = result2
+            # path reconstruction
+            if status == "success":
+                path1 = reconstruct_path(parents1, start, neighbor)
+                path2 = list(reversed(reconstruct_path(parents2, goal, neighbor)))
+                path = path1 + path2[1:]
+                print("Path is:", path1)
+                print("number of explored nodes:", nodes_explored)
+                return path
+
+def bi_bfs_helper(maze, queue, visited1, visited2, parents, nodes_explored):
+    neighbor = None
+    status = "searching"
+    current = queue.popleft()
+    nodes_explored += 1
+    print("current is:", current)
+    print("queue from start is :", queue)
+
+    # expanding neighbors (+ excluding repeated neighbors)
+    for neighbor in get_neighbors(current, maze):
+        # Test for possible shared node
+        if neighbor in visited2:
+            print("Goal path found!")
+            parents[neighbor] = current
+            status = "success"
+            print ("shared node is: ", neighbor)
+            return (nodes_explored, neighbor, status)
+        if neighbor not in visited1:
+            queue.append(neighbor)
+            parents[neighbor] = current
+            visited1.add(neighbor)
+    return (nodes_explored, neighbor, status)
+
+
+
+
 
 # display solution step-by-step
 def copy_maze(maze):
@@ -1041,14 +1504,42 @@ goal = find_position(maze3, "G")
 #print("IDDFS (Iterative Deepening DFS) path is: ", path11)
 #marked = mark_path(maze3,path11)
 #if path11 != None:
-#    print("\nSolved Maze - IDDFS (Iterative Deepening DFS) :")
+#    print("\nSolved Maze - IDDFS (Iterative Deepening DFS):")
 #    print_maze(marked)
 # IDDFS (advanced )Test:
-path12 = iddfs_adv(maze3, start, goal)
-print("IDDFS (Iterative Deepening DFS) path is: ", path12)
-marked = mark_path(maze3,path12)
-if path12 != None:
-    print("\nSolved Maze - IDDFS (Iterative Deepening DFS) :")
+#path12 = iddfs_adv(maze3, start, goal)
+#print("IDDFS (Iterative Deepening DFS) path is: ", path12)
+#marked = mark_path(maze3,path12)
+#if path12 != None:
+#    print("\nSolved Maze - IDDFS (Iterative Deepening DFS):")
+#    print_maze(marked)
+# Bidirectional(frontier) Test:
+#path13 = bi_bfs_frontier(maze3, start, goal)
+#print("Bidirectional(frontier) path is: ", path13)
+#marked = mark_path(maze3,path13)
+#if path13 != None:
+#    print("\nSolved Maze - Bidirectional(frontier):")
+#    print_maze(marked)
+# Bidirectional(visited) Test:
+#path14 = bi_bfs_visited(maze3, start, goal)
+#print("Bidirectional(visited) path is: ", path14)
+#marked = mark_path(maze3,path14)
+#if path14 != None:
+#    print("\nSolved Maze - Bidirectional(visited):")
+#    print_maze(marked)
+# Bidirectional(visited) advanced Test:
+#path15 = bi_bfs_visited_adv(maze3, start, goal)
+#print("Bidirectional(visited)-advanced path is: ", path15)
+#marked = mark_path(maze3,path15)
+#if path15 != None:
+#    print("\nSolved Maze - Bidirectional(visited)-advanced:")
+#    print_maze(marked)
+# Bidirectional(visited) advanced with helper Test:
+path16 = bi_bfs_visited_adv_usinghelper(maze3, start, goal)
+print("Bidirectional(visited)-advanced path is: ", path16)
+marked = mark_path(maze3,path16)
+if path16 != None:
+    print("\nSolved Maze - Bidirectional(visited)-advanced:")
     print_maze(marked)
 
 #Test 4 - Maze with different move cost
